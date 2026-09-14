@@ -1,28 +1,34 @@
 /*
-SEBELUM SUARA HABIS — v3 / TEKANAN
-Post-hardcore / industrial / noise untuk spoken word.
+SEBELUM SUARA HABIS — v3 / GELOMBANG
+Pelan dan tegang -> menumpuk -> meledak -> surut -> meledak lebih besar.
+Tekstur elektrik / post-hardcore / noise untuk spoken word.
 
-144 BPM | 1 cycle = 5/3 detik | durasi 4:00.
+Grid 144 BPM; awal terasa lambat lewat nada panjang dan denyut renggang.
+1 cycle = 5/3 detik. Durasi 4:00.
 EXPORT: start cycle 0, end cycle 144, cps 0.6.
-MULAI_DETIK = 90 untuk mengecek transisi ke 01:40.
+MULAI_DETIK = 90 untuk mengecek ledakan pertama.
 
-00:00       gitar overdrive dan drum langsung bergerak
-00:13–00:40 riff patah, bass menyerang
-00:40–01:07 riff baru dan snare makin mendesak
-01:07–01:33 melodi tegang, gitar makin terbuka
-01:33–01:40 pukulan bersama, putus singkat, feedback menggantung
-01:40       ledakan gitar distorsi + noise berat, tepat detik 100
-02:07–02:20 gerak cepat kembali, melodi menjawab
-02:20–02:27 breakdown pendek: bass, pukulan rendah, gesekan
-02:27–02:53 dorongan kedua dengan riff kromatik
-02:53–03:20 tremolo dan drum lebih rapat
-03:20–03:40 puncak terakhir: seruan gitar dan aksen berhenti bersama
-03:40–03:53 hantaman penutup, akor terakhir menggantung
-03:53–04:00 ekor efek
+00:00–00:20 gitar elektrik tipis, dengung rendah; tanpa drum
+00:20–00:40 denyut jarang, motif mulai bergerak
+00:40–01:00 ketegangan tumbuh, masih tertahan
+01:00–01:20 riff teredam dan drum setengah tempo masuk pelan
+01:20–01:38 dorongan makin rapat, volume dan warna terbuka
+01:38–01:40 menahan napas
+01:40–02:00 LEDAKAN 1: gitar, drum penuh, noise berat
+02:00–02:07 surut: dengung, sisa senar, ruang untuk kata
+02:07–02:27 LEDAKAN 2: melodi lebih tinggi, noise lebih tebal
+02:27–02:40 surut lagi, lalu merangkak naik
+02:40–02:53 LEDAKAN 3: riff kromatik, aksen terputus
+02:53–03:00 tarikan napas terakhir
+03:00–03:27 KLIMAKS: tremolo, seruan, drum rapat
+03:27–03:30 putus singkat
+03:30–03:50 LEDAKAN TERAKHIR: paling padat dan paling berat
+03:50–04:00 akor penutup dan ekor efek
 
-Tidak memakai gitar akustik atau cello.
+Noise berat hanya dimainkan dalam jendela ledakan.
+Pada bagian surut, tidak ada pemicu noise berat baru; ekor efek dibiarkan luruh.
 Sampel GM, TR-909, snare dan tom tersedia di Strudel.
-Internet dibutuhkan pada pemuatan pertama. Jika bunyi pertama terlewat,
+Internet dibutuhkan pada pemuatan pertama. Jika bunyi awal terlewat,
 tunggu sampel selesai dimuat lalu Stop dan Play lagi dari awal.
 Tanpa visual dan vokal. MASTER, GITAR, DRUM, NOISE bisa diatur.
 */
@@ -54,6 +60,35 @@ const amp = p => p.roomsize(0.8).roomlp(3000).orbit(0)
 const rendah = p => p.roomsize(0.6).roomlp(1300).orbit(1)
 const kit = p => p.roomsize(0.8).roomlp(3400).orbit(2)
 const ruangNoise = p => p.roomsize(1.6).roomlp(3100).orbit(3)
+
+// Awal dan bagian surut memakai senar elektrik panjang, bukan riff cepat.
+const BAYANG = [
+  "<[d3@2 ~ a3 ~ e4 ~ ~] [bb2@2 ~ f3 ~ d4 ~ ~] [g2@2 ~ d3 ~ a3 ~ ~] [a2@2 ~ e3 ~ cs4 ~ ~]>",
+  "<[d3@2 ~ f4 e4 ~ d4 ~] [bb2@2 ~ d4 f4 ~ e4 ~] [g2@2 ~ bb3 d4 ~ a3 ~] [a2@2 ~ e4 cs4 ~ a3 ~]>"
+]
+const bayang = (tema = 0, v = 1, lambat = 2) => amp(
+  note(BAYANG[tema]).slow(lambat).s("gm_electric_guitar_clean")
+    .clip(1.5).attack(0.07).release(0.60)
+    .hpf(120).lpf(1900).distort("0.3:0.80")
+    .gain(0.25 * GITAR * v).pan(0.38)
+    .delay(0.25).delaytime(0.625).delayfeedback(0.32).room(0.32)
+)
+const bawah = (v = 1) => rendah(
+  note("<[d2,a2] [bb1,f2] [g2,d3] [a2,e3]>").slow(2)
+    .s("gm_overdriven_guitar")
+    .clip(0.90).attack(0.8).sustain(0.60).release(0.8)
+    .hpf(55).lpf(700).gain(0.042 * GITAR * v).room(0.16)
+)
+const udara = (v = 1) => ruangNoise(
+  s("brown").slow(2)
+    .attack(1.0).decay(0.3).sustain(0.5).release(0.70)
+    .hpf(180).lpf(850).gain(0.033 * NOISE * v).room(0.24)
+)
+const denyut = (v = 1) => kit(
+  s("tr909_bd:1 ~ ~ ~").slow(2)
+    .attack(0.005).decay(0.18).release(0.06)
+    .lpf(280).gain(0.29 * DRUM * v).room(0.04)
+)
 
 // Riff berganti kontur dan ritme. Register rendah memberi tekanan,
 // sedangkan tema terakhir membuka rentang nada menuju klimaks.
@@ -190,20 +225,24 @@ const patah = p => p.filterWhen(t => {
   return !(Math.floor(c) % 4 === 3 && c % 1 >= 0.875)
 })
 
-// Noise berat masuk tepat cycle 60 = 100 detik.
-// Breakdown tetap menekan; gelombang terakhir paling tebal.
+// Jendela ledakan dalam cycle. Semua mengikuti grid yang sama dengan band.
+// Noise benar-benar berhenti dipicu di sela gelombang.
+const GELOMBANG = [[60, 72], [76, 88], [96, 104], [108, 124], [126, 138]]
+const dalamGelombang = t =>
+  GELOMBANG.some(([awal, akhir]) => Number(t) >= awal && Number(t) < akhir)
 const TEKANAN = [
-  [100, 0.90], [120, 1.15], [135, 1.10], [140, 0.45],
-  [146.667, 0.70], [160, 1.10], [173.333, 1.40],
-  [195, 1.55], [200, 1.45], [216.667, 1.85],
-  [220, 1.10], [230, 0.32], [233.333, 0]
+  [100, 0.82], [110, 1.05], [118.333, 0.98],
+  [126.667, 1.12], [140, 1.28], [145, 1.20],
+  [160, 1.32], [171.667, 1.42],
+  [180, 1.42], [200, 1.63], [205, 1.60],
+  [210, 1.70], [223.333, 1.88], [228.333, 1.72], [230, 0]
 ]
 const noiseBerat = stack(
   ruangNoise(
     s("<[pink@2 ~ pink ~ pink@3] [pink ~ pink@2 pink ~ pink ~]>")
       .attack(0.025).decay(0.16).sustain(0.70).release(0.32)
       .hpf(850)
-      .lpf(otomasi([[100, 3600], [140, 2800], [173.333, 5000], [216.667, 6200], [233.333, 1500]]))
+      .lpf(otomasi([[100, 3400], [140, 4200], [171.667, 4700], [200, 5400], [223.333, 6200], [230, 4200]]))
       .distort("1.8:0.56")
       .pan("<0.12 0.88 0.28 0.72>")
       .gain(otomasi(TEKANAN, 0.18 * NOISE)).room(0.27)
@@ -215,12 +254,12 @@ const noiseBerat = stack(
       .distort("1.3:0.52")
       .gain(otomasi(TEKANAN, 0.22 * NOISE)).pan(0.5).room(0.08)
   )
-).filterWhen(t => Number(t) >= 60 && Number(t) < 140)
+).filterWhen(dalamGelombang)
 
 const hantam = kit(
   s("tr909_cr:2").hpf(1500).lpf(7200)
     .decay(0.85).release(0.25).gain(0.36 * DRUM).room(0.18)
-).filterWhen(t => [0, 8, 24, 40, 60, 76, 104, 112, 120, 128, 132, 136].includes(Number(t)))
+).filterWhen(t => [60, 64, 76, 80, 96, 100, 108, 116, 126, 130, 134, 138].includes(Number(t)))
 
 const pukulanBersama = amp(
   note("[a2,e3] ~ [a2,e3] ~").s("gm_distortion_guitar")
@@ -234,75 +273,108 @@ const napasPendek = ruangNoise(
     .hpf(450).lpf(3400).gain(0.10 * GITAR).room(0.35)
 )
 const akorTerakhir = amp(
-  note("[d2,a2,d3]").slow(4).s("gm_distortion_guitar")
-    .clip(0.85).attack(0.003).release(1.0)
+  note("[d2,a2,d3]").slow(2).s("gm_distortion_guitar")
+    .clip(0.75).attack(0.003).release(1.0)
     .hpf(85).lpf(4200).distort("0.95:0.64")
     .gain(0.29 * GITAR).room(0.25)
 )
 
 const bab = [
-  // c0–8 | 00:00–00:13.33: langsung bergerak
-  [8, stack(riff(0, 0, 0.90), bass(0, false, 0.85), drum(0, 0.90), hat(false, 0.85))],
+  // c0–12 | 00:00–00:20: pelan; biarkan kalimat pertama berdiri sendiri
+  [12, stack(bayang(0, 0.82), bawah(0.65), udara(0.65))],
 
-  // c8–24 | 00:13.33–00:40: riff pertama menyerang
-  [16, stack(patah(riff(1, 0, 1.0)), bass(1, true, 0.95), drum(1, 0.98), hat(false, 1.0))],
+  // c12–24 | 00:20–00:40: motif berubah, denyut masih jauh
+  [12, stack(bayang(1, 0.90), bawah(0.75), udara(0.75), denyut(0.55))],
 
-  // c24–40 | 00:40–01:06.67: harmoni dan riff berganti
-  [16, stack(riff(2, 1, 0.97), bass(2, true, 1.0), drum(1, 1.0), hat(true, 0.9), buka(0.7))],
+  // c24–36 | 00:40–01:00: gerak senar lebih dekat
+  [12, stack(bayang(0, 0.95, 1), bawah(0.85), udara(0.90), denyut(0.80))],
 
-  // c40–56 | 01:06.67–01:33.33: senar terbuka dan melodi menjawab
-  [16, stack(riff(1, 1, 1.0), bass(1, true, 1.0), drum(1, 1.04),
-    seruan(0, 0.75), hat(true, 0.95), buka(0.9))],
+  // c36–48 | 01:00–01:20: bayangan riff dan drum, belum dilepas
+  [12, stack(bayang(1, 0.72), riff(0, 0, 0.30).slow(2),
+    bass(0, false, 0.42).slow(2), drum(0, 0.32).slow(2), udara(0.95))],
 
-  // c56–59 | 01:33.33–01:38.33: pukulan bersama
-  [3, stack(pukulanBersama, drum(4, 1.0), feedback(0.7))],
+  // c48–56 | 01:20–01:33.33: tekanan makin mendesak
+  [8, stack(riff(1, 0, 0.57), bass(1, false, 0.62),
+    drum(1, 0.48), hat(false, 0.42), feedback(0.25))],
 
-  // c59–60 | 01:38.33–01:40: putus pendek sebelum ledakan
-  [1, napasPendek],
+  // c56–59 | 01:33.33–01:38.33: pukulan singkat mengunci ketegangan
+  [3, stack(pukulanBersama, drum(4, 0.65), feedback(0.38))],
 
-  // c60–76 | 01:40–02:06.67: hentakan berat lalu dorongan cepat
-  [16, arrange(
-    [8, stack(riff(0, 2, 1.12), bass(0, true, 1.12), drum(2, 1.10),
-      feedback(0.9), hat(false, 1.0), buka(1.0))],
-    [8, stack(riff(1, 2, 1.12), bass(1, true, 1.12), drum(1, 1.10),
-      feedback(0.9), hat(true, 0.95), buka(1.0))]
+  // c59–60 | 01:38.33–01:40: tahan napas
+  [1, stack(napasPendek, udara(0.45))],
+
+  // c60–72 | 01:40–02:00: LEDAKAN 1
+  [12, arrange(
+    [4, stack(riff(0, 2, 1.0), bass(0, true, 1.0), drum(2, 1.0),
+      feedback(0.72), hat(false, 0.85), buka(0.85))],
+    [8, stack(riff(1, 2, 1.03), bass(1, true, 1.02), drum(1, 1.04),
+      feedback(0.80), hat(true, 0.88), buka(0.90))]
   )],
 
-  // c76–84 | 02:06.67–02:20: ritme cepat kembali
-  [8, stack(riff(2, 1, 1.12), bass(2, true, 1.10), drum(1, 1.12),
-    seruan(0, 0.9), hat(true, 1.0), buka(1.0))],
+  // c72–76 | 02:00–02:06.67: surut jelas, tanpa kit penuh
+  [4, stack(bayang(1, 0.72, 1), bawah(0.80), udara(1.0), feedback(0.22))],
 
-  // c84–88 | 02:20–02:26.67: breakdown, tetap keras
-  [4, stack(riff(3, 0, 1.15), bass(3, false, 1.18), drum(4, 1.18), feedback(1.0))],
+  // c76–88 | 02:06.67–02:26.67: LEDAKAN 2, tema berbeda
+  [12, stack(riff(2, 2, 1.08), bass(2, true, 1.08), drum(1, 1.10),
+    seruan(0, 0.90), hat(true, 0.96), buka(0.98))],
 
-  // c88–104 | 02:26.67–02:53.33: dorongan kedua
-  [16, stack(patah(riff(3, 1, 1.12)), bass(3, true, 1.12), drum(1, 1.14),
-    tremolo(0.65), hat(true, 1.0), buka(1.0))],
+  // c88–96 | 02:26.67–02:40: jatuh, lalu bangun dari tekanan rendah
+  [8, arrange(
+    [4, stack(bayang(0, 0.60), bawah(0.90), udara(1.05), feedback(0.27))],
+    [4, stack(riff(3, 0, 0.42), bass(3, false, 0.60),
+      drum(4, 0.45), feedback(0.40), udara(1.0))]
+  )],
 
-  // c104–120 | 02:53.33–03:20: puncak kedua
-  [16, stack(riff(4, 2, 1.18), bass(4, true, 1.15), drum(3, 1.16),
-    tremolo(1.0), feedback(1.05), hat(true, 1.0), buka(1.05))],
+  // c96–104 | 02:40–02:53.33: LEDAKAN 3, pendek dan patah
+  [8, stack(patah(riff(3, 1, 1.10)), bass(3, true, 1.10), drum(1, 1.13),
+    tremolo(0.72), hat(true, 1.0), buka(1.0))],
 
-  // c120–132 | 03:20–03:40: deklarasi terakhir
-  [12, stack(patah(riff(4, 2, 1.22)), patah(bass(4, true, 1.20)),
-    patah(drum(3, 1.20)), seruan(1, 1.15), feedback(1.15),
+  // c104–108 | 02:53.33–03:00: surut dan ancang-ancang terakhir
+  [4, arrange(
+    [2, stack(bayang(1, 0.55, 1), bawah(0.90), feedback(0.30), udara(1.10))],
+    [2, stack(riff(3, 0, 0.48), bass(3, false, 0.60),
+      drum(4, 0.58), feedback(0.45))]
+  )],
+
+  // c108–124 | 03:00–03:26.67: KLIMAKS, terus membesar
+  [16, arrange(
+    [8, stack(riff(4, 2, 1.15), bass(4, true, 1.13), drum(3, 1.13),
+      tremolo(0.95), feedback(0.95), hat(true, 1.0), buka(1.0))],
+    [8, stack(patah(riff(4, 2, 1.19)), bass(4, true, 1.16), drum(3, 1.17),
+      seruan(1, 1.05), feedback(1.05), hat(true, 1.03), buka(1.05))]
+  )],
+
+  // c124–126 | 03:26.67–03:30: satu tarikan napas sebelum pecah terakhir
+  [2, stack(bawah(1.0), feedback(0.36), udara(1.1))],
+
+  // c126–138 | 03:30–03:50: LEDAKAN TERAKHIR, paling padat
+  [12, stack(patah(riff(4, 2, 1.24)), patah(bass(4, true, 1.20)),
+    patah(drum(3, 1.23)), seruan(1, 1.15), tremolo(0.60), feedback(1.15),
     patah(hat(true, 1.05)), buka(1.10))],
 
-  // c132–140 | 03:40–03:53.33: runtuh lewat hantaman, lalu akor terakhir
-  [8, arrange(
-    [4, stack(riff(0, 2, 1.08), bass(0, false, 1.1), drum(2, 1.1), feedback(1.0))],
-    [4, akorTerakhir]
-  )],
+  // c138–140 | 03:50–03:53.33: akor terakhir, noise baru berhenti
+  [2, akorTerakhir],
 
-  // c140–144 | 03:53.33–04:00
+  // c140–144 | 03:53.33–04:00: ekor efek
   [4, silence]
 ]
 
+// Volume mengikuti fase emosi, sementara jumlah instrumen berubah nyata.
+// Titik berjarak pendek di batas gelombang memberi perubahan yang tegas.
+// Nilai disampling pada event; decay, delay, dan reverb tetap meluruh alami.
 const DINAMIKA = [
-  [0, 0.94], [40, 0.98], [66.667, 1.0], [93.333, 1.0],
-  [100, 1.08], [140, 1.02], [146.667, 1.05],
-  [173.333, 1.12], [200, 1.15], [216.667, 1.18],
-  [220, 1.08], [230, 0.90], [233.333, 0.15], [240, 0]
+  [0, 0.48], [20, 0.54], [40, 0.62], [60, 0.69],
+  [80, 0.79], [93.333, 0.90], [98.333, 0.40], [99.99, 0.36],
+  [100, 1.03], [110, 1.07], [119.99, 1.07],
+  [120, 0.40], [126.65, 0.46], [126.667, 1.10],
+  [140, 1.13], [146.65, 1.10],
+  [146.667, 0.42], [153.333, 0.48], [159.99, 0.66],
+  [160, 1.13], [173.32, 1.14],
+  [173.333, 0.42], [179.99, 0.68],
+  [180, 1.15], [200, 1.17], [206.65, 1.17],
+  [206.667, 0.42], [209.99, 0.48],
+  [210, 1.18], [226.667, 1.20], [229.99, 1.18],
+  [230, 0.95], [233.333, 0.20], [240, 0]
 ]
 const lagu = stack(arrange(...bab), noiseBerat, hantam)
   .filterWhen(t => Number(t) >= 0 && Number(t) < 140)
